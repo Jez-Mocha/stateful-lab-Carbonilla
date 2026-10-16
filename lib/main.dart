@@ -55,20 +55,151 @@ class _CartScreenState extends State<CartScreen> {
     super.dispose();
   }
 
+  // Plus button: stops at 99.
+  void _increase(int i) {
+    setState(() {
+      if (_items[i].quantity < 99) {
+        _items[i].quantity++;
+      }
+    });
+  }
+
+  // Minus button: never goes below 1.
+  void _decrease(int i) {
+    setState(() {
+      if (_items[i].quantity > 1) {
+        _items[i].quantity--;
+      }
+    });
+  }
+
+  // Checkbox: flip the gotIt flag.
+  void _toggle(int i) {
+    setState(() {
+      _items[i].gotIt = !_items[i].gotIt;
+    });
+  }
+
+  // Sum of price x quantity for all items.
+  double get _total {
+    double sum = 0;
+    for (final item in _items) {
+      sum += item.price * item.quantity;
+    }
+    return sum;
+  }
+
+  int get _gotItCount => _items.where((item) => item.gotIt).length;
+
+  Widget _buildSummaryBar() {
+    return Container(
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text('Items: ${_items.length}  •  Got it: $_gotItCount'),
+          ),
+          Text(
+            'Total: PHP ${_total.toStringAsFixed(2)}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Mini Shopping Cart')),
-      body: ListView(
-        children: [
-          for (final item in _items)
-            ListTile(
-              title: Text(item.name),
-              subtitle: Text(
-                'PHP ${item.price.toStringAsFixed(2)} x ${item.quantity}',
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: _items.length,
+                itemBuilder: (context, i) {
+                  return CartItemTile(
+                    item: _items[i],
+                    onIncrease: () => _increase(i),
+                    onDecrease: () => _decrease(i),
+                    onToggle: () => _toggle(i),
+                  );
+                },
               ),
             ),
-        ],
+            _buildSummaryBar(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Stateless because it only displays the item it is given; changes are sent up through callbacks.
+class CartItemTile extends StatelessWidget {
+  final CartItem item;
+  final VoidCallback onIncrease;
+  final VoidCallback onDecrease;
+  final VoidCallback onToggle;
+
+  const CartItemTile({
+    super.key,
+    required this.item,
+    required this.onIncrease,
+    required this.onDecrease,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          children: [
+            Checkbox(value: item.gotIt, onChanged: (_) => onToggle()),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      // Line-through when the item is checked.
+                      decoration: item.gotIt
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                  ),
+                  Text(
+                    'PHP ${item.price.toStringAsFixed(2)} each',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.remove_circle_outline),
+              onPressed: onDecrease,
+            ),
+            Text(
+              '${item.quantity}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              onPressed: onIncrease,
+            ),
+          ],
+        ),
       ),
     );
   }
