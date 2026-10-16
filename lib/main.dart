@@ -91,6 +91,38 @@ class _CartScreenState extends State<CartScreen> {
 
   int get _gotItCount => _items.where((item) => item.gotIt).length;
 
+  // Error messages shown under the text fields.
+  String? _nameError;
+  String? _priceError;
+
+  // Validate the form; add the item only if both fields are valid.
+  void _addItem() {
+    final name = _nameController.text.trim();
+    final price = double.tryParse(_priceController.text.trim());
+
+    final nameError = name.isEmpty ? 'Enter an item name' : null;
+    final priceError = (price == null || price <= 0)
+        ? 'Enter a price greater than 0'
+        : null;
+
+    setState(() {
+      _nameError = nameError;
+      _priceError = priceError;
+      if (nameError == null && priceError == null) {
+        _items.add(CartItem(name: name, price: price!));
+        _nameController.clear();
+        _priceController.clear();
+      }
+    });
+  }
+
+  // Remove every item that is marked "got it".
+  void _clearChecked() {
+    setState(() {
+      _items.removeWhere((item) => item.gotIt);
+    });
+  }
+
   Widget _buildSummaryBar() {
     return Container(
       margin: const EdgeInsets.all(12),
@@ -107,6 +139,71 @@ class _CartScreenState extends State<CartScreen> {
           Text(
             'Total: PHP ${_total.toStringAsFixed(2)}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildForm() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Item name',
+                    errorText: _nameError,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 120,
+                child: TextField(
+                  controller: _priceController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Price',
+                    errorText: _priceError,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: _addItem,
+                  child: const Text('Add'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _clearChecked,
+                  child: const Text('Clear checked'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -134,6 +231,7 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ),
             _buildSummaryBar(),
+            _buildForm(),
           ],
         ),
       ),
