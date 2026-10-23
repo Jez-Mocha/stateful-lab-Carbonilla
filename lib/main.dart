@@ -2,122 +2,123 @@ import 'package:flutter/material.dart';
 
 void main() => runApp(
   MaterialApp(
-    title: 'Pink Grocery List',
+    title: 'Mini Shopping Cart',
     theme: ThemeData(
       colorSchemeSeed: const Color(0xFFE91E63), // pink theme
       scaffoldBackgroundColor: const Color(0xFFFCE4EC), // soft pink background
       useMaterial3: true,
     ),
-    home: const GroceryScreen(),
+    home: const CartScreen(),
   ),
 );
 
-// Data model: name and price never change, but qty and bought are changeable.
-class GroceryItem {
+// Data model: name and price never change, but quantity and gotIt are changeable.
+class CartItem {
   final String name;
   final double price;
-  int qty;
-  bool bought;
+  int quantity;
+  bool gotIt;
 
-  GroceryItem({
+  CartItem({
     required this.name,
     required this.price,
-    this.qty = 1,
-    this.bought = false,
+    this.quantity = 1,
+    this.gotIt = false,
   });
 }
 
-// Stateful because the list changes while the app runs.
-class GroceryScreen extends StatefulWidget {
-  const GroceryScreen({super.key});
+// Stateful because the cart changes while the app runs.
+class CartScreen extends StatefulWidget {
+  const CartScreen({super.key});
 
   @override
-  State<GroceryScreen> createState() => _GroceryScreenState();
+  State<CartScreen> createState() => _CartScreenState();
 }
 
-class _GroceryScreenState extends State<GroceryScreen> {
-  final List<GroceryItem> _list = [];
-  final TextEditingController _itemController = TextEditingController();
-  final TextEditingController _costController = TextEditingController();
+class _CartScreenState extends State<CartScreen> {
+  final List<CartItem> _items = [];
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
 
-  String? _itemError;
-  String? _costError;
+  String? _nameError;
+  String? _priceError;
 
   @override
   void initState() {
     super.initState();
     // Preload 3 sample items.
-    _list.addAll([
-      GroceryItem(name: 'Bread', price: 55.00, qty: 2),
-      GroceryItem(name: 'Chicken', price: 180.00, qty: 1),
-      GroceryItem(name: 'Coffee', price: 12.00, qty: 6),
+    _items.addAll([
+      CartItem(name: 'Rice', price: 60.00, quantity: 2),
+      CartItem(name: 'Eggs', price: 8.00, quantity: 8),
+      CartItem(name: 'Milk', price: 95.00, quantity: 1),
     ]);
   }
 
   @override
   void dispose() {
-    _itemController.dispose();
-    _costController.dispose();
+    _nameController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
-  // Plus button: stops at 99.
-  void _addQty(int i) {
+  // Plus button: stops at 10.
+  void _increase(int i) {
     setState(() {
-      if (_list[i].qty < 99) _list[i].qty++;
+      if (_items[i].quantity < 10) _items[i].quantity++;
     });
   }
 
   // Minus button: never goes below 1.
-  void _minusQty(int i) {
+  void _decrease(int i) {
     setState(() {
-      if (_list[i].qty > 1) _list[i].qty--;
+      if (_items[i].quantity > 1) _items[i].quantity--;
     });
   }
 
-  // Checkbox: flip the bought flag.
-  void _toggleBought(int i) {
+  // Checkbox: flip the gotIt flag.
+  void _toggle(int i) {
     setState(() {
-      _list[i].bought = !_list[i].bought;
+      _items[i].gotIt = !_items[i].gotIt;
     });
   }
 
-  // Sum of price x qty for all items.
-  double get _grandTotal {
+  // Sum of price x quantity for all items.
+  double get _total {
     double sum = 0;
-    for (final item in _list) {
-      sum += item.price * item.qty;
+    for (final item in _items) {
+      sum += item.price * item.quantity;
     }
     return sum;
   }
 
-  int get _boughtCount => _list.where((item) => item.bought).length;
+  int get _gotItCount => _items.where((item) => item.gotIt).length;
 
   // Validate the form; add the item only if both fields are valid.
-  void _saveItem() {
-    final name = _itemController.text.trim();
-    final cost = double.tryParse(_costController.text.trim());
+  void _addItem() {
+    final name = _nameController.text.trim();
+    final price = double.tryParse(_priceController.text.trim());
 
-    final itemError = name.isEmpty ? 'Please type an item name' : null;
-    final costError = (cost == null || cost <= 0)
+    final nameError = name.isEmpty ? 'Please type an item name' : null;
+    final priceError =
+        (price == null || price.isNaN || price.isInfinite || price <= 0)
         ? 'Price must be more than 0'
         : null;
 
     setState(() {
-      _itemError = itemError;
-      _costError = costError;
-      if (itemError == null && costError == null) {
-        _list.add(GroceryItem(name: name, price: cost!));
-        _itemController.clear();
-        _costController.clear();
+      _nameError = nameError;
+      _priceError = priceError;
+      if (nameError == null && priceError == null) {
+        _items.add(CartItem(name: name, price: price!));
+        _nameController.clear();
+        _priceController.clear();
       }
     });
   }
 
-  // Remove every item that is marked as bought.
-  void _removeBought() {
+  // Remove every item that is marked as got it.
+  void _clearChecked() {
     setState(() {
-      _list.removeWhere((item) => item.bought);
+      _items.removeWhere((item) => item.gotIt);
     });
   }
 
@@ -132,10 +133,10 @@ class _GroceryScreenState extends State<GroceryScreen> {
       child: Row(
         children: [
           Expanded(
-            child: Text('Items: ${_list.length}  |  Bought: $_boughtCount'),
+            child: Text('Items: ${_items.length}  |  Got it: $_gotItCount'),
           ),
           Text(
-            'Total: PHP ${_grandTotal.toStringAsFixed(2)}',
+            'Total: PHP ${_total.toStringAsFixed(2)}',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -164,10 +165,10 @@ class _GroceryScreenState extends State<GroceryScreen> {
             children: [
               Expanded(
                 child: TextField(
-                  controller: _itemController,
+                  controller: _nameController,
                   decoration: InputDecoration(
-                    labelText: 'Grocery item',
-                    errorText: _itemError,
+                    labelText: 'Item name',
+                    errorText: _nameError,
                     border: const OutlineInputBorder(),
                   ),
                 ),
@@ -176,13 +177,13 @@ class _GroceryScreenState extends State<GroceryScreen> {
               SizedBox(
                 width: 120,
                 child: TextField(
-                  controller: _costController,
+                  controller: _priceController,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
                   decoration: InputDecoration(
-                    labelText: 'Cost',
-                    errorText: _costError,
+                    labelText: 'Price',
+                    errorText: _priceError,
                     border: const OutlineInputBorder(),
                   ),
                 ),
@@ -194,15 +195,15 @@ class _GroceryScreenState extends State<GroceryScreen> {
             children: [
               Expanded(
                 child: FilledButton(
-                  onPressed: _saveItem,
-                  child: const Text('Add Item'),
+                  onPressed: _addItem,
+                  child: const Text('Add'),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: _removeBought,
-                  child: const Text('Remove bought'),
+                  onPressed: _clearChecked,
+                  child: const Text('Clear checked'),
                 ),
               ),
             ],
@@ -217,7 +218,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Pink Grocery List',
+          'Mini Shopping Cart',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xFFE91E63),
@@ -229,13 +230,13 @@ class _GroceryScreenState extends State<GroceryScreen> {
           children: [
             Expanded(
               child: ListView.builder(
-                itemCount: _list.length,
+                itemCount: _items.length,
                 itemBuilder: (context, i) {
-                  return GroceryTile(
-                    item: _list[i],
-                    onAdd: () => _addQty(i),
-                    onMinus: () => _minusQty(i),
-                    onToggle: () => _toggleBought(i),
+                  return CartItemTile(
+                    item: _items[i],
+                    onIncrease: () => _increase(i),
+                    onDecrease: () => _decrease(i),
+                    onToggle: () => _toggle(i),
                   );
                 },
               ),
@@ -250,17 +251,17 @@ class _GroceryScreenState extends State<GroceryScreen> {
 }
 
 // Stateless because it only displays the item it is given; changes go up through callbacks.
-class GroceryTile extends StatelessWidget {
-  final GroceryItem item;
-  final VoidCallback onAdd;
-  final VoidCallback onMinus;
+class CartItemTile extends StatelessWidget {
+  final CartItem item;
+  final VoidCallback onIncrease;
+  final VoidCallback onDecrease;
   final VoidCallback onToggle;
 
-  const GroceryTile({
+  const CartItemTile({
     super.key,
     required this.item,
-    required this.onAdd,
-    required this.onMinus,
+    required this.onIncrease,
+    required this.onDecrease,
     required this.onToggle,
   });
 
@@ -279,7 +280,7 @@ class GroceryTile extends StatelessWidget {
         child: Row(
           children: [
             Checkbox(
-              value: item.bought,
+              value: item.gotIt,
               activeColor: const Color(0xFFE91E63),
               onChanged: (_) => onToggle(),
             ),
@@ -291,7 +292,7 @@ class GroceryTile extends StatelessWidget {
                     item.name,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      decoration: item.bought
+                      decoration: item.gotIt
                           ? TextDecoration.lineThrough
                           : null,
                     ),
@@ -306,16 +307,16 @@ class GroceryTile extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.remove_circle_outline),
               color: const Color(0xFFE91E63),
-              onPressed: onMinus,
+              onPressed: onDecrease,
             ),
             Text(
-              '${item.qty}',
+              '${item.quantity}',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             IconButton(
               icon: const Icon(Icons.add_circle_outline),
               color: const Color(0xFFE91E63),
-              onPressed: onAdd,
+              onPressed: onIncrease,
             ),
           ],
         ),
