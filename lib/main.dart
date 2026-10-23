@@ -2,157 +2,159 @@ import 'package:flutter/material.dart';
 
 void main() => runApp(
   MaterialApp(
-    title: 'Mini Shopping Cart',
-    theme: ThemeData(colorSchemeSeed: Colors.teal, useMaterial3: true),
-    home: const CartScreen(),
+    title: 'Pink Grocery List',
+    theme: ThemeData(
+      colorSchemeSeed: const Color(0xFFE91E63), // pink theme
+      scaffoldBackgroundColor: const Color(0xFFFCE4EC), // soft pink background
+      useMaterial3: true,
+    ),
+    home: const GroceryScreen(),
   ),
 );
 
-// Data model: name and price never change, but quantity and gotIt are changeable.
-class CartItem {
+// Data model: name and price never change, but qty and bought are changeable.
+class GroceryItem {
   final String name;
   final double price;
-  int quantity;
-  bool gotIt;
+  int qty;
+  bool bought;
 
-  CartItem({
+  GroceryItem({
     required this.name,
     required this.price,
-    this.quantity = 1,
-    this.gotIt = false,
+    this.qty = 1,
+    this.bought = false,
   });
 }
 
-// Stateful because the cart changes while the app runs (quantities, checkboxes, added/removed items).
-class CartScreen extends StatefulWidget {
-  const CartScreen({super.key});
+// Stateful because the list changes while the app runs.
+class GroceryScreen extends StatefulWidget {
+  const GroceryScreen({super.key});
 
   @override
-  State<CartScreen> createState() => _CartScreenState();
+  State<GroceryScreen> createState() => _GroceryScreenState();
 }
 
-class _CartScreenState extends State<CartScreen> {
-  final List<CartItem> _items = [];
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
+class _GroceryScreenState extends State<GroceryScreen> {
+  final List<GroceryItem> _list = [];
+  final TextEditingController _itemController = TextEditingController();
+  final TextEditingController _costController = TextEditingController();
+
+  String? _itemError;
+  String? _costError;
 
   @override
   void initState() {
     super.initState();
     // Preload 3 sample items.
-    _items.addAll([
-      CartItem(name: 'Rice', price: 60.00, quantity: 2),
-      CartItem(name: 'Eggs', price: 8.00, quantity: 12),
-      CartItem(name: 'Milk', price: 95.00, quantity: 1),
+    _list.addAll([
+      GroceryItem(name: 'Bread', price: 55.00, qty: 2),
+      GroceryItem(name: 'Chicken', price: 180.00, qty: 1),
+      GroceryItem(name: 'Coffee', price: 12.00, qty: 6),
     ]);
   }
 
   @override
   void dispose() {
-    // Free the controllers when the screen is removed.
-    _nameController.dispose();
-    _priceController.dispose();
+    _itemController.dispose();
+    _costController.dispose();
     super.dispose();
   }
 
   // Plus button: stops at 99.
-  void _increase(int i) {
+  void _addQty(int i) {
     setState(() {
-      if (_items[i].quantity < 99) {
-        _items[i].quantity++;
-      }
+      if (_list[i].qty < 99) _list[i].qty++;
     });
   }
 
   // Minus button: never goes below 1.
-  void _decrease(int i) {
+  void _minusQty(int i) {
     setState(() {
-      if (_items[i].quantity > 1) {
-        _items[i].quantity--;
-      }
+      if (_list[i].qty > 1) _list[i].qty--;
     });
   }
 
-  // Checkbox: flip the gotIt flag.
-  void _toggle(int i) {
+  // Checkbox: flip the bought flag.
+  void _toggleBought(int i) {
     setState(() {
-      _items[i].gotIt = !_items[i].gotIt;
+      _list[i].bought = !_list[i].bought;
     });
   }
 
-  // Sum of price x quantity for all items.
-  double get _total {
+  // Sum of price x qty for all items.
+  double get _grandTotal {
     double sum = 0;
-    for (final item in _items) {
-      sum += item.price * item.quantity;
+    for (final item in _list) {
+      sum += item.price * item.qty;
     }
     return sum;
   }
 
-  int get _gotItCount => _items.where((item) => item.gotIt).length;
-
-  // Error messages shown under the text fields.
-  String? _nameError;
-  String? _priceError;
+  int get _boughtCount => _list.where((item) => item.bought).length;
 
   // Validate the form; add the item only if both fields are valid.
-  void _addItem() {
-    final name = _nameController.text.trim();
-    final price = double.tryParse(_priceController.text.trim());
+  void _saveItem() {
+    final name = _itemController.text.trim();
+    final cost = double.tryParse(_costController.text.trim());
 
-    final nameError = name.isEmpty ? 'Enter an item name' : null;
-    final priceError = (price == null || price <= 0)
-        ? 'Enter a price greater than 0'
+    final itemError = name.isEmpty ? 'Please type an item name' : null;
+    final costError = (cost == null || cost <= 0)
+        ? 'Price must be more than 0'
         : null;
 
     setState(() {
-      _nameError = nameError;
-      _priceError = priceError;
-      if (nameError == null && priceError == null) {
-        _items.add(CartItem(name: name, price: price!));
-        _nameController.clear();
-        _priceController.clear();
+      _itemError = itemError;
+      _costError = costError;
+      if (itemError == null && costError == null) {
+        _list.add(GroceryItem(name: name, price: cost!));
+        _itemController.clear();
+        _costController.clear();
       }
     });
   }
 
-  // Remove every item that is marked "got it".
-  void _clearChecked() {
+  // Remove every item that is marked as bought.
+  void _removeBought() {
     setState(() {
-      _items.removeWhere((item) => item.gotIt);
+      _list.removeWhere((item) => item.bought);
     });
   }
 
-  Widget _buildSummaryBar() {
+  Widget _buildSummary() {
     return Container(
       margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFF8BBD0),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         children: [
           Expanded(
-            child: Text('Items: ${_items.length}  •  Got it: $_gotItCount'),
+            child: Text('Items: ${_list.length}  |  Bought: $_boughtCount'),
           ),
           Text(
-            'Total: PHP ${_total.toStringAsFixed(2)}',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            'Total: PHP ${_grandTotal.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF880E4F),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildForm() {
+  Widget _buildInputArea() {
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF48FB1), width: 1.5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -162,10 +164,10 @@ class _CartScreenState extends State<CartScreen> {
             children: [
               Expanded(
                 child: TextField(
-                  controller: _nameController,
+                  controller: _itemController,
                   decoration: InputDecoration(
-                    labelText: 'Item name',
-                    errorText: _nameError,
+                    labelText: 'Grocery item',
+                    errorText: _itemError,
                     border: const OutlineInputBorder(),
                   ),
                 ),
@@ -174,13 +176,13 @@ class _CartScreenState extends State<CartScreen> {
               SizedBox(
                 width: 120,
                 child: TextField(
-                  controller: _priceController,
+                  controller: _costController,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
                   decoration: InputDecoration(
-                    labelText: 'Price',
-                    errorText: _priceError,
+                    labelText: 'Cost',
+                    errorText: _costError,
                     border: const OutlineInputBorder(),
                   ),
                 ),
@@ -192,15 +194,15 @@ class _CartScreenState extends State<CartScreen> {
             children: [
               Expanded(
                 child: FilledButton(
-                  onPressed: _addItem,
-                  child: const Text('Add'),
+                  onPressed: _saveItem,
+                  child: const Text('Add Item'),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: _clearChecked,
-                  child: const Text('Clear checked'),
+                  onPressed: _removeBought,
+                  child: const Text('Remove bought'),
                 ),
               ),
             ],
@@ -213,25 +215,33 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mini Shopping Cart')),
+      appBar: AppBar(
+        title: const Text(
+          'Pink Grocery List',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color(0xFFE91E63),
+        foregroundColor: Colors.white,
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: ListView.builder(
-                itemCount: _items.length,
+                itemCount: _list.length,
                 itemBuilder: (context, i) {
-                  return CartItemTile(
-                    item: _items[i],
-                    onIncrease: () => _increase(i),
-                    onDecrease: () => _decrease(i),
-                    onToggle: () => _toggle(i),
+                  return GroceryTile(
+                    item: _list[i],
+                    onAdd: () => _addQty(i),
+                    onMinus: () => _minusQty(i),
+                    onToggle: () => _toggleBought(i),
                   );
                 },
               ),
             ),
-            _buildSummaryBar(),
-            _buildForm(),
+            _buildSummary(),
+            _buildInputArea(),
           ],
         ),
       ),
@@ -239,30 +249,40 @@ class _CartScreenState extends State<CartScreen> {
   }
 }
 
-// Stateless because it only displays the item it is given; changes are sent up through callbacks.
-class CartItemTile extends StatelessWidget {
-  final CartItem item;
-  final VoidCallback onIncrease;
-  final VoidCallback onDecrease;
+// Stateless because it only displays the item it is given; changes go up through callbacks.
+class GroceryTile extends StatelessWidget {
+  final GroceryItem item;
+  final VoidCallback onAdd;
+  final VoidCallback onMinus;
   final VoidCallback onToggle;
 
-  const CartItemTile({
+  const GroceryTile({
     super.key,
     required this.item,
-    required this.onIncrease,
-    required this.onDecrease,
+    required this.onAdd,
+    required this.onMinus,
     required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFFF8BBD0)),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Row(
           children: [
-            Checkbox(value: item.gotIt, onChanged: (_) => onToggle()),
+            Checkbox(
+              value: item.bought,
+              activeColor: const Color(0xFFE91E63),
+              onChanged: (_) => onToggle(),
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,8 +291,7 @@ class CartItemTile extends StatelessWidget {
                     item.name,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      // Line-through when the item is checked.
-                      decoration: item.gotIt
+                      decoration: item.bought
                           ? TextDecoration.lineThrough
                           : null,
                     ),
@@ -286,15 +305,17 @@ class CartItemTile extends StatelessWidget {
             ),
             IconButton(
               icon: const Icon(Icons.remove_circle_outline),
-              onPressed: onDecrease,
+              color: const Color(0xFFE91E63),
+              onPressed: onMinus,
             ),
             Text(
-              '${item.quantity}',
+              '${item.qty}',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             IconButton(
               icon: const Icon(Icons.add_circle_outline),
-              onPressed: onIncrease,
+              color: const Color(0xFFE91E63),
+              onPressed: onAdd,
             ),
           ],
         ),
