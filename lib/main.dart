@@ -82,6 +82,12 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
+  void _delete(int i) {
+    setState(() {
+      _items.removeAt(i);
+    });
+  }
+
   // Sum of price x quantity for all items.
   double get _total {
     double sum = 0;
@@ -237,6 +243,7 @@ class _CartScreenState extends State<CartScreen> {
                     onIncrease: () => _increase(i),
                     onDecrease: () => _decrease(i),
                     onToggle: () => _toggle(i),
+                    onDelete: () => _delete(i),
                   );
                 },
               ),
@@ -256,6 +263,7 @@ class CartItemTile extends StatelessWidget {
   final VoidCallback onIncrease;
   final VoidCallback onDecrease;
   final VoidCallback onToggle;
+  final VoidCallback onDelete;
 
   const CartItemTile({
     super.key,
@@ -263,6 +271,7 @@ class CartItemTile extends StatelessWidget {
     required this.onIncrease,
     required this.onDecrease,
     required this.onToggle,
+    required this.onDelete,
   });
 
   @override
@@ -317,6 +326,13 @@ class CartItemTile extends StatelessWidget {
               icon: const Icon(Icons.add_circle_outline),
               color: const Color(0xFFE91E63),
               onPressed: onIncrease,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              color: const Color(
+                0xFF880E4F,
+              ), // darker pink so it stands apart from +/-
+              onPressed: onDelete,
             ),
           ],
         ),
